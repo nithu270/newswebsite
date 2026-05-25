@@ -21,18 +21,32 @@ const Home = () => {
   const [messages, setMessages] = useState([]);
   const [inputMessage, setInputMessage] = useState("");
   console.log("test",darkMode)
-  const fetchNews = async () => {
-    try {
-      let url = `https://newsapi.org/v2/top-headlines?country=us&category=${category}&apiKey=${import.meta.env.VITE_NEWS_API_KEY}`;
-      if (query) url = `https://newsapi.org/v2/everything?q=${query}&apiKey=${import.meta.env.VITE_NEWS_API_KEY}`;
-      if (date) url = `https://newsapi.org/v2/everything?q=latest&from=${date}&to=${date}&sortBy=publishedAt&apiKey=${import.meta.env.VITE_NEWS_API_KEY}`;
 
-      const { data } = await axios.get(url);
-      setNews(data.articles);
-    } catch (error) {
-      console.error("Error fetching news:", error);
+  const fetchNews = async () => {
+  try {
+
+    let url =
+      `http://localhost:5000/api/news?category=${category}`;
+
+    if (query) {
+      url =
+        `http://localhost:5000/api/news?query=${query}`;
     }
-  };
+
+    console.log("Fetching:", url);
+
+    const response = await axios.get(url);
+
+    console.log(response.data);
+
+    setNews(response.data.articles);
+
+  } catch (error) {
+
+    console.error("NEWS ERROR:", error);
+
+  }
+};
 
   const fetchWeather = async () => {
     try {
