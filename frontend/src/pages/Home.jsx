@@ -26,11 +26,11 @@ const Home = () => {
   try {
 
     let url =
-      `http://localhost:5000/api/news?category=${category}`;
+      `https://newswebsite-cmtz.onrender.com/api/news?category=${category}`;
 
     if (query) {
       url =
-        `http://localhost:5000/api/news?query=${query}`;
+        `https://newswebsite-cmtz.onrender.com?query=${query}`;
     }
 
     console.log("Fetching:", url);
