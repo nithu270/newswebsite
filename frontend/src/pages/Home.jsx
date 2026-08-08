@@ -11,6 +11,7 @@ const ai = new GoogleGenAI({
   apiKey: import.meta.env.VITE_GEMINI_API_KEY,
 });
 const Home = () => {
+  const [location, setLocation] = useState("Chennai");
   const [news, setNews] = useState([]);
   const [date, setDate] = useState("");
   const [query, setQuery] = useState("");
@@ -24,55 +25,122 @@ const Home = () => {
   const [messages, setMessages] = useState([]);
   const [inputMessage, setInputMessage] = useState("");
   console.log("test",darkMode)
-
-  const fetchNews = async () => {
+const fetchNews = async () => {
   try {
-
     let url =
-      `https://newswebsite-cmtz.onrender.com/api/news?category=${category}`;
+      `http://localhost:5000/api/news` +
+      `?category=${encodeURIComponent(category)}` +
+      `&location=${encodeURIComponent(location)}`;
 
-    if (query) {
+    if (query.trim()) {
       url =
-        `https://newswebsite-cmtz.onrender.com?query=${query}`;
+        `http://localhost:5000/api/news` +
+        `?query=${encodeURIComponent(query)}` +
+        `&location=${encodeURIComponent(location)}`;
     }
 
-    console.log("Fetching:", url);
+    console.log("🔥 FRONTEND NEWS URL:", url);
 
     const response = await axios.get(url);
 
-    console.log(response.data);
+    console.log("🔥 FRONTEND LOCATION:", location);
+    console.log("🔥 ARTICLES:", response.data.articles);
 
-    setNews(response.data.articles);
+    setNews(response.data.articles || []);
 
   } catch (error) {
-
     console.error("NEWS ERROR:", error);
-
+    setNews([]);
   }
 };
 
-  const fetchWeather = async () => {
-    try {
-      const apiKey = import.meta.env.VITE_WEATHER_API_KEY;
-      const city = "sathyamangalam";
-      const url = `https://api.openweathermap.org/data/2.5/weather?q=${city}&units=metric&appid=${apiKey}`;
 
-      const { data } = await axios.get(url);
-      setWeather({
-        temp: data.main.temp,
-        condition: data.weather[0].main,
-        icon: `https://openweathermap.org/img/wn/${data.weather[0].icon}.png`,
-        city: data.name,
-      });
-    } catch (error) {
-      console.error("Error fetching weather:", error);
+const fetchWeather = async (latitude = null, longitude = null) => {
+  try {
+    const apiKey = import.meta.env.VITE_WEATHER_API_KEY;
+
+    let url;
+
+    // User's actual location
+    if (latitude !== null && longitude !== null) {
+      url =
+        `https://api.openweathermap.org/data/2.5/weather` +
+        `?lat=${latitude}` +
+        `&lon=${longitude}` +
+        `&units=metric` +
+        `&appid=${apiKey}`;
     }
-  };
 
-  useEffect(() => {
-    fetchNews();
-    fetchWeather();
-  }, [date, query, category]);
+    // Default location = Chennai
+    else {
+      url =
+        `https://api.openweathermap.org/data/2.5/weather` +
+        `?q=Chennai` +
+        `&units=metric` +
+        `&appid=${apiKey}`;
+    }
+
+    const { data } = await axios.get(url);
+
+    console.log("Weather city:", data.name);
+
+    setWeather({
+      temp: data.main.temp,
+      condition: data.weather[0].main,
+      icon: `https://openweathermap.org/img/wn/${data.weather[0].icon}.png`,
+      city: data.name,
+    });
+
+    // This also changes the news location
+    setLocation(data.name);
+
+  } catch (error) {
+    console.error("WEATHER ERROR:", error);
+  }
+};
+
+
+const enableLocationWeather = () => {
+
+  if (!navigator.geolocation) {
+    alert("Geolocation is not supported by your browser.");
+    return;
+  }
+
+  navigator.geolocation.getCurrentPosition(
+
+    (position) => {
+
+      const { latitude, longitude } = position.coords;
+
+      fetchWeather(latitude, longitude);
+
+    },
+
+    (error) => {
+
+      console.error("Location permission error:", error);
+
+      alert("Location access denied. Showing Chennai news.");
+
+      setLocation("Chennai");
+
+      fetchWeather();
+    }
+  );
+};
+
+
+// Fetch news whenever location/category/search changes
+useEffect(() => {
+  fetchNews();
+}, [date, query, category, location]);
+
+
+// Fetch Chennai weather when page initially loads
+useEffect(() => {
+  fetchWeather();
+}, []);
 
   const shareNews = (platform, title, url) => {
     const encodedTitle = encodeURIComponent(title);
@@ -161,35 +229,24 @@ const handleSendMessage = async () => {
 
   <div className="pt-20 sm:pt-24">
       {/* Weather Section */}
-<div className="w-full flex justify-center sm:justify-end mb-6">
+<div className="flex justify-center md:justify-end mb-6">
+
   {weather && (
     <motion.div
-      className={`${
+      className={`w-full max-w-[220px] p-3 rounded-lg shadow-lg flex items-center gap-2 transition-all duration-300 ${
         darkMode
-          ? "bg-[#111827] border-gray-600 text-white"
-          : "bg-white border-gray-300 text-black"
-      }
-      w-[220px]
-      max-w-full
-      min-h-[80px]
-      p-3
-      rounded-lg
-      border
-      shadow-lg
-      flex
-      items-center
-      gap-3
-      transition-all
-      duration-300`}
+          ? "bg-[#111827] text-white border border-gray-700"
+          : "bg-white text-black border border-gray-200"
+      }`}
     >
       <img
         src={weather.icon}
         alt={weather.condition}
-        className="w-9 h-9 object-contain flex-shrink-0"
+        className="w-8 h-8"
       />
 
-      <div className="text-sm">
-        <p className="font-semibold truncate">
+      <div className="text-sm flex-1">
+        <p className="font-semibold">
           {weather.city}
         </p>
 
@@ -197,8 +254,17 @@ const handleSendMessage = async () => {
           {Math.floor(weather.temp)}°C
         </p>
       </div>
+
     </motion.div>
   )}
+
+  <button
+    onClick={enableLocationWeather}
+    className="ml-2 px-3 py-2 bg-gray-600 hover:bg-gray-700 text-white rounded-lg text-sm"
+  >
+    📍 My Location
+  </button>
+
 </div>
         {/* Header */}
         <motion.h1

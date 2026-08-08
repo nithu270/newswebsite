@@ -6,17 +6,28 @@ import NewsCard from "../components/NewsCard";
 const Category = () => {
   const { category } = useParams();
   const [news, setNews] = useState([]);
+useEffect(() => {
+  const fetchNews = async () => {
+    try {
+      const url =
+        `https://newswebsite-cmtz.onrender.com/api/news` +
+        `?category=${encodeURIComponent(category)}` +
+        `&location=${encodeURIComponent(location)}`;
 
-  useEffect(() => {
-    const fetchNews = async () => {
-      const { data } = await axios.get(
-        `https://newsapi.org/v2/top-headlines?category=${category}&country=us&apiKey=${import.meta.env.VITE_NEWS_API_KEY}`
-      );
-      setNews(data.articles);
-    };
-    fetchNews();
-  }, [category]);
+      console.log("Fetching news:", url);
 
+      const { data } = await axios.get(url);
+
+      setNews(data.articles || []);
+
+    } catch (error) {
+      console.error("News fetch error:", error);
+      setNews([]);
+    }
+  };
+
+  fetchNews();
+}, [category, location]);
   return (
     <div className="p-5">
       <h1 className="text-3xl font-bold mb-5">Category: {category}</h1>

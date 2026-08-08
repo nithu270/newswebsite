@@ -57,15 +57,35 @@ const axios = require("axios");
 
 app.get("/api/news", async (req, res) => {
   try {
+    const {
+      category = "general",
+      query,
+      location = "Chennai",
+    } = req.query;
 
-    const { category, query } = req.query;
+    let apiURL;
 
-    let apiURL =
-      `https://newsapi.org/v2/top-headlines?country=us&category=${category || "general"}&apiKey=${process.env.NEWS_API_KEY}`;
-
-    if (query) {
+    if (query && query.trim()) {
       apiURL =
-        `https://newsapi.org/v2/everything?q=${query}&apiKey=${process.env.NEWS_API_KEY}`;
+        `https://newsapi.org/v2/everything` +
+        `?q=${encodeURIComponent(query)}` +
+        `&language=en` +
+        `&sortBy=publishedAt` +
+        `&pageSize=30` +
+        `&apiKey=${process.env.NEWS_API_KEY}`;
+    } else {
+      const searchQuery =
+        category === "general"
+          ? `"${location}"`
+          : `"${location}" AND ${category}`;
+
+      apiURL =
+        `https://newsapi.org/v2/everything` +
+        `?q=${encodeURIComponent(searchQuery)}` +
+        `&language=en` +
+        `&sortBy=publishedAt` +
+        `&pageSize=30` +
+        `&apiKey=${process.env.NEWS_API_KEY}`;
     }
 
     const response = await axios.get(apiURL);
@@ -73,9 +93,10 @@ app.get("/api/news", async (req, res) => {
     res.json(response.data);
 
   } catch (error) {
-    console.error(error);
+    console.error("NEWS ERROR:", error.response?.data || error.message);
+
     res.status(500).json({
-      error: "Failed to fetch news"
+      error: "Failed to fetch news",
     });
   }
 });
