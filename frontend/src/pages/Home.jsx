@@ -28,39 +28,35 @@ const Home = () => {
   console.log("test",darkMode)
 const fetchNews = async () => {
   try {
-    setLoadingNews(true);
-
     let url =
-      `https://newswebsite-cmtz.onrender.com/api/news` +
+      `http://localhost:5000/api/news` +
       `?category=${encodeURIComponent(category)}` +
       `&location=${encodeURIComponent(location)}`;
 
     if (query.trim()) {
       url =
-        `https://newswebsite-cmtz.onrender.com/api/news` +
+        `http://localhost:5000/api/news` +
         `?query=${encodeURIComponent(query)}` +
         `&location=${encodeURIComponent(location)}`;
     }
 
-    console.log("📡 NEWS REQUEST:", url);
+    console.log("🔥 FRONTEND NEWS URL:", url);
 
-    const response = await axios.get(url, {
-      timeout: 30000,
-    });
+    const response = await axios.get(url);
 
-    console.log("📡 NEWS RESPONSE:", response.data);
+    console.log("🔥 FRONTEND LOCATION:", location);
+    console.log("🔥 ARTICLES:", response.data.articles);
 
     setNews(response.data.articles || []);
 
   } catch (error) {
-    console.error("❌ NEWS ERROR:", error);
-
+    console.error("NEWS ERROR:", error);
     setNews([]);
-
-  } finally {
-    setLoadingNews(false);
   }
 };
+
+
+
 const fetchWeather = async (latitude = null, longitude = null) => {
   try {
     const apiKey = import.meta.env.VITE_WEATHER_API_KEY;
