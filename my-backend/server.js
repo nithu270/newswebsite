@@ -59,43 +59,168 @@ app.get("/api/news", async (req, res) => {
   try {
     const {
       category = "general",
-      query,
+      query = "",
       location = "Chennai",
     } = req.query;
 
-    let apiURL;
+    const city = location.trim();
 
-    if (query && query.trim()) {
-      apiURL =
-        `https://newsapi.org/v2/everything` +
-        `?q=${encodeURIComponent(query)}` +
-        `&language=en` +
-        `&sortBy=publishedAt` +
-        `&pageSize=30` +
-        `&apiKey=${process.env.NEWS_API_KEY}`;
-    } else {
-      const searchQuery =
-        category === "general"
-          ? `"${location}"`
-          : `"${location}" AND ${category}`;
+    let searchQuery;
 
-      apiURL =
-        `https://newsapi.org/v2/everything` +
-        `?q=${encodeURIComponent(searchQuery)}` +
-        `&language=en` +
-        `&sortBy=publishedAt` +
-        `&pageSize=30` +
-        `&apiKey=${process.env.NEWS_API_KEY}`;
+    // Search bar / voice search
+    if (query.trim()) {
+      searchQuery = query.trim();
+    } 
+    // Location news
+    else {
+      searchQuery = `"${city}"`;
     }
+
+    console.log("=================================");
+    console.log("LOCATION:", city);
+    console.log("CATEGORY:", category);
+    console.log("SEARCH:", searchQuery);
+    console.log("=================================");
+
+    const apiURL =
+      `https://newsapi.org/v2/everything` +
+      `?q=${encodeURIComponent(searchQuery)}` +
+      `&searchIn=title,description` +
+      `&language=en` +
+      `&sortBy=publishedAt` +
+      `&pageSize=100` +
+      `&apiKey=${process.env.NEWS_API_KEY}`;
 
     const response = await axios.get(apiURL);
 
-    res.json(response.data);
+    let articles = response.data.articles || [];
+
+    // ------------------------------------
+    // STRICT CITY FILTER
+    // ------------------------------------
+    if (!query.trim()) {
+
+      const cityLower = city.toLowerCase();
+
+      articles = articles.filter((article) => {
+
+        const title =
+          (article.title || "").toLowerCase();
+
+        const description =
+          (article.description || "").toLowerCase();
+
+        const content =
+          (article.content || "").toLowerCase();
+
+        return (
+          title.includes(cityLower) ||
+          description.includes(cityLower) ||
+          content.includes(cityLower)
+        );
+      });
+    }
+
+    // ------------------------------------
+    // CATEGORY FILTER
+    // ------------------------------------
+    if (
+      category &&
+      category !== "general" &&
+      !query.trim()
+    ) {
+
+      const categoryWords = {
+        business: [
+          "business",
+          "company",
+          "market",
+          "economy",
+          "startup",
+          "industry",
+        ],
+
+        sports: [
+          "sports",
+          "cricket",
+          "football",
+          "tennis",
+          "match",
+          "player",
+        ],
+
+        technology: [
+          "technology",
+          "tech",
+          "software",
+          "ai",
+          "artificial intelligence",
+          "startup",
+        ],
+
+        entertainment: [
+          "movie",
+          "film",
+          "actor",
+          "actress",
+          "cinema",
+          "entertainment",
+        ],
+
+        health: [
+          "health",
+          "hospital",
+          "medical",
+          "doctor",
+          "disease",
+        ],
+
+        science: [
+          "science",
+          "research",
+          "space",
+          "scientist",
+        ],
+      };
+
+      const words = categoryWords[category] || [];
+
+      articles = articles.filter((article) => {
+
+        const text = `
+          ${article.title || ""}
+          ${article.description || ""}
+          ${article.content || ""}
+        `.toLowerCase();
+
+        return words.some((word) =>
+          text.includes(word)
+        );
+      });
+    }
+
+    console.log(
+      `FINAL ARTICLES FOR ${city}:`,
+      articles.length
+    );
+
+    res.json({
+      status: "ok",
+      location: city,
+      category,
+      totalResults: articles.length,
+      articles,
+    });
 
   } catch (error) {
-    console.error("NEWS ERROR:", error.response?.data || error.message);
+
+    console.error(
+      "NEWS ERROR:",
+      error.response?.data || error.message
+    );
 
     res.status(500).json({
+      status: "error",
       error: "Failed to fetch news",
     });
   }
