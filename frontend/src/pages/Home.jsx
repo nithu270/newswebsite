@@ -26,35 +26,32 @@ const Home = () => {
   const [inputMessage, setInputMessage] = useState("");
   const [loadingNews, setLoadingNews] = useState(true);
   console.log("test",darkMode)
+const API_URL = "https://newswebsite-cmtz.onrender.com";
+
 const fetchNews = async () => {
   try {
     let url =
-      `http://localhost:5000/api/news` +
+      `${API_URL}/api/news` +
       `?category=${encodeURIComponent(category)}` +
       `&location=${encodeURIComponent(location)}`;
 
     if (query.trim()) {
       url =
-        `http://localhost:5000/api/news` +
+        `${API_URL}/api/news` +
         `?query=${encodeURIComponent(query)}` +
         `&location=${encodeURIComponent(location)}`;
     }
 
-    console.log("🔥 FRONTEND NEWS URL:", url);
+    console.log("NEWS URL:", url);
 
     const response = await axios.get(url);
 
-    console.log("🔥 FRONTEND LOCATION:", location);
-    console.log("🔥 ARTICLES:", response.data.articles);
-
     setNews(response.data.articles || []);
-
   } catch (error) {
     console.error("NEWS ERROR:", error);
     setNews([]);
   }
 };
-
 
 
 const fetchWeather = async (latitude = null, longitude = null) => {
