@@ -28,34 +28,39 @@ const Home = () => {
   console.log("test",darkMode)
 const fetchNews = async () => {
   try {
+    setLoadingNews(true);
+
     let url =
-      `http://localhost:5000/api/news` +
+      `https://newswebsite-cmtz.onrender.com/api/news` +
       `?category=${encodeURIComponent(category)}` +
       `&location=${encodeURIComponent(location)}`;
 
     if (query.trim()) {
       url =
-        `http://localhost:5000/api/news` +
+        `https://newswebsite-cmtz.onrender.com/api/news` +
         `?query=${encodeURIComponent(query)}` +
         `&location=${encodeURIComponent(location)}`;
     }
 
-    console.log("🔥 FRONTEND NEWS URL:", url);
+    console.log("📡 NEWS REQUEST:", url);
 
-    const response = await axios.get(url);
+    const response = await axios.get(url, {
+      timeout: 30000,
+    });
 
-    console.log("🔥 FRONTEND LOCATION:", location);
-    console.log("🔥 ARTICLES:", response.data.articles);
+    console.log("📡 NEWS RESPONSE:", response.data);
 
     setNews(response.data.articles || []);
 
   } catch (error) {
-    console.error("NEWS ERROR:", error);
+    console.error("❌ NEWS ERROR:", error);
+
     setNews([]);
+
+  } finally {
+    setLoadingNews(false);
   }
 };
-
-
 const fetchWeather = async (latitude = null, longitude = null) => {
   try {
     const apiKey = import.meta.env.VITE_WEATHER_API_KEY;
@@ -92,8 +97,9 @@ const fetchWeather = async (latitude = null, longitude = null) => {
       city: data.name,
     });
 
-    // This also changes the news location
-    setLocation(data.name);
+setLocation((prev) =>
+  prev === data.name ? prev : data.name
+);
 
   } catch (error) {
     console.error("WEATHER ERROR:", error);
@@ -338,7 +344,7 @@ const handleSendMessage = async () => {
           )}
         </AnimatePresence>
         <motion.div className="grid grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-3 gap-8 mt-10 ">
-          {news.length > 0 ? (
+          { news.length > 0 ? (
             news.map((article, index) => ( 
               <div key={index} className="flex justify-center">
                 <motion.div className={`${darkMode==true?"bg-[#111827] shadow shadow-white":"bg-white shadow shadow-black"} min-h-[430px]
