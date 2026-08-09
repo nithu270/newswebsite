@@ -24,6 +24,7 @@ const Home = () => {
   const [chatOpen, setChatOpen] = useState(false);
   const [messages, setMessages] = useState([]);
   const [inputMessage, setInputMessage] = useState("");
+  const [loadingNews, setLoadingNews] = useState(true);
   console.log("test",darkMode)
 const fetchNews = async () => {
   try {
